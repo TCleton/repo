@@ -131,7 +131,7 @@ static void printBits(uint32_t value) {
     }
 }
 
-void map4to12(const int32_t* __restrict rx, int32_t*       __restrict tx)
+void map4to12(const int32_t* __restrict rx, int32_t* __restrict tx)
 {
     for (uint32_t f = 0; f < samplesPerBlock; ++f)
     {
@@ -164,13 +164,6 @@ int main(int argc, char *argv[])
     TwiSetAddr(I2cAddrSOFTConfig);
 	if (Soft_resetAudio() != APP_SUCCESS) {printf("Soft_resetAudio failed\n");}
 	Soft_init();
-
-	uint8_t iodira = TwiRead8(0x00);
-	uint8_t iodirb = TwiRead8(0x01);
-	uint8_t gpioa  = TwiRead8(0x12);
-	uint8_t gpiob  = TwiRead8(0x13);
-	printf("MCP23017: IODIRA=0x%02X IODIRB=0x%02X GPIOA=0x%02X GPIOB=0x%02X\n",
-	       iodira, iodirb, gpioa, gpiob);
 
     ConfigureSru();
 

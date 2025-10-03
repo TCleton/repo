@@ -7,9 +7,14 @@ ADI_PDMA_DESC_LIST dmaDescriptorTxPong;
 ADI_PDMA_DESC_LIST dmaDescriptorRxPing;
 ADI_PDMA_DESC_LIST dmaDescriptorRxPong;
 
+// --- DMAConfig.c: place PDMA buffers in uncached L2 (pre-mapped section) ---
+//__attribute__((section("seg_l2_uncached")))
 ADI_CACHE_ALIGN uint32_t bufferTxPing[TX_WORDS];
+//__attribute__((section("seg_l2_uncached")))
 ADI_CACHE_ALIGN uint32_t bufferTxPong[TX_WORDS];
+//__attribute__((section("seg_l2_uncached")))
 ADI_CACHE_ALIGN uint32_t bufferRxPing[RX_WORDS];
+//__attribute__((section("seg_l2_uncached")))
 ADI_CACHE_ALIGN uint32_t bufferRxPong[RX_WORDS];
 
 void PrepareDescriptors(void)

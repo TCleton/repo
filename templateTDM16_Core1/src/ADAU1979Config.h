@@ -29,11 +29,11 @@ void ADAU1979_init(void);
 //_____________________________ADAU1979_PLL_CONTROL_____________________________
 #define ADAU1979_PLL_CONTROL			0x01 //memory adress to write to
 /* 0 : PLL not lock, 1 : PLL locked */
-#define ADAU1979_PLL_LOCK							PLL_LOCK
+#define ADAU1979_PLL_LOCK							RESERVED1 //its read only
 /* 0 : 0 nothing, 1 : automatic mute with PLL unlock */
 #define ADAU1979_PLL_MUTE							PLL_MUTE
 /* 0 MCLK used for PLL input, 1 : LRCLK used */
-#define ADAU1979_CLK_S								((uint8_t[]){1})
+#define ADAU1979_CLK_S								((uint8_t[]){0})//1
 /* 001 : 256*fs, 010 : 384*fs, 011 : 512*fs, 100 : 768*fs, 000 : 128*fs  */
 #define ADAU1979_MCS								((uint8_t[]){0,1,1}) //===================== SHARED ????????????????
 
@@ -42,19 +42,19 @@ void ADAU1979_init(void);
 /* 0 : LRCLK Low then High, 1 : LRCLK High then Low */
 #define ADAU1979_LR_POL							LRCLK_POL
 /* 0 : Data changes on falling Edge, 1 : rising */
-#define ADAU1979_BCLKEDGE						BCLK_EDGE_ADC // ================== SHARED ????????????????
+#define ADAU1979_BCLKEDGE						BCLK_EDGE
 /* 0 : LDO off, 1 : on */
 #define ADAU1979_LDO_EN							((uint8_t[]){1})
 /* 0 : Voltage Reference power down, 1 : enabled */
 #define ADAU1979_VREF_EN						((uint8_t[]){1})
 /* 0 : channel powered down, 1 : channel enabled */
-#define ADAU1979_ADC_EN4							((uint8_t[]){1})
+#define ADAU1979_ADC_EN4						((uint8_t[]){1})
 /* 0 : channel powered down, 1 : channel enabled */
-#define ADAU1979_ADC_EN3							((uint8_t[]){1})
+#define ADAU1979_ADC_EN3						((uint8_t[]){1})
 /* 0 : channel powered down, 1 : channel enabled */
-#define ADAU1979_ADC_EN2							((uint8_t[]){1})
+#define ADAU1979_ADC_EN2						((uint8_t[]){1})
 /* 0 : channel powered down, 1 : channel enabled */
-#define ADAU1979_ADC_EN1							((uint8_t[]){1})
+#define ADAU1979_ADC_EN1						((uint8_t[]){1})
 
 //_____________________________ADAU1979_SAI_CTRL0_____________________________
 #define ADAU1979_SAI_CTRL0			0x05 //memory adress to write to

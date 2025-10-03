@@ -44,5 +44,6 @@ void ConfigureSru(void)
 	// ====== DATA FROM SPORTA TO DAC ======
 	DSP_DRIVE(DAI1_PBEN01_I); // the DSP drives this pin to send DATA to the DAC (ADAU1962)
 	ROUTE(SPT4_AD0_O, DAI1_PB01_I); // D0 is data from SP4A and DAI1_PB01_I is the pin connected to ADAU1962 SDATA1
+	//ROUTE(DAI1_PB06_O, DAI1_PB01_I);          // ADC SDATA -> DAC SDATA
 }
 

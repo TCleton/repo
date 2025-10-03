@@ -22,30 +22,30 @@ void ADAU1962_init(void);
 //_____________________________ADAU1962_PLL_CLK_CTRL0_____________________________
 #define ADAU1962_PLL_CLK_CTRL0			0x00 //memory adress to write to
 /* PLL Input Select. Selects between MCLKI/XTALI and DLRCLK as the input to the PLL. */
-#define ADAU1962_PLLIN							((uint8_t[]){0,1})
+#define ADAU1962_PLLIN							((uint8_t[]){0,0})//01
 /* 00 XTAL Oscillator Enabled. 01 Reserved. 10 Reserved. 11 XTALO Off. XTAL Oscillator Setting. XTALO pin status. */
 #define ADAU1962_XTAL_SET						((uint8_t[]){0,0})
 /* 0 : normal operation, 1 device in reset */
 #define ADAU1962_SOFT_RST						((uint8_t[]){0})
 /* 00 : 256 × fS MCLK, 01 : 384 × fS MCLK, 10 : 512 × fS MCLK, 01 : 768 × fS MCLK */
-#define ADAU1962_MCS 							((uint8_t[]){1,0})
+#define ADAU1962_MCS 							((uint8_t[]){1,0})//32bitx16slots = 512
 /* 0 Master PowerDown, 1 Master PowerUp */
 #define ADAU1962_PUP							PUP
 
 //_____________________________ADAU1962_PLL_CLK_CTRL1_____________________________
 #define ADAU1962_PLL_CLK_CTRL1			0x01//memory adress to write to
 /* 00 : I²C Register settings, 01 : Reserved, 10 : Lower Power, 11 Lowest Power*/
-#define ADAU1962_LOPWR_MODE 						((uint8_t[]){0,0})
-/* 00 : 4-6MHz from PLL, 01 : 8-12MHz from PLL, 10 : copies inputClock (MCLKI or XTALI), 11 : MCLK0 Pin disabled */
+#define ADAU1962_LOPWR_MODE 					((uint8_t[]){0,0})
+/* 00 : 4-6MHz from PLL, 01 : 8-12MHz from PLL, 10 : copies inputClock (MCLKI or XTALI), 11 : MCLKO Pin disabled */
 #define ADAU1962_MCLKO_SEL						((uint8_t[]){1,0})
 /*  0 : No DAC automute, 1 : DAC automute on PLL unlock */
 #define ADAU1962_PLL_MUTE						PLL_MUTE
 /* 0 : PLL not lock, 1 : PLL locked */
-#define ADAU1962_PLL_LOCK						PLL_LOCK
+#define ADAU1962_PLL_LOCK						RESERVED1 // it's read only
 /* 0 : internal voltage ref enabled, 1 : disabled */
-#define	ADAU1962_VREF_EN						((uint8_t[]){0})
+#define	ADAU1962_VREF_EN						((uint8_t[]){1})
 /* 0 : MCLK from PLL, 1 : MCLK from MCLKI or XTALI */
-#define ADAU1962_CLK_SEL							((uint8_t[]){0})
+#define ADAU1962_CLK_SEL						((uint8_t[]){0})
 
 //______________________________PDN_THRMSENS_CTRL_1______________________________
 #define ADAU1962_PDN_THRMSENS_CTRL_1 			0x02//memory adress to write to
@@ -94,7 +94,7 @@ void ADAU1962_init(void);
 //__________________________________DAC_CTRL1__________________________________
 #define ADAU1962_DAC_CTRL1   			0x07//memory adress to write to
 /* 0 : normal, 1 : internal DBCLK generation */
-#define ADAU1962_BCLK_GEN						((uint8_t[]){1})
+#define ADAU1962_BCLK_GEN						((uint8_t[]){0})
 /* 0 : 50% duty Cycle DLRCLK, 1 : pulse mode */
 #define ADAU1962_LRCLK_MODE						LRCLK_MODE
 /* 0 : normal, 1 : inverted */
@@ -104,7 +104,7 @@ void ADAU1962_init(void);
 /* 0 : 32 cycles per frame, 1 : 16 cycles per frame */
 #define ADAU1962_BCLK_RATE						BCLK_RATE
 /* 0 : rising edge, 1 : falling edge */
-#define ADAU1962_BCLK_EDGE 						BCLK_EDGE_DAC
+#define ADAU1962_BCLK_EDGE 						BCLK_EDGE
 /* 0 : DLRCLK/DBCLK slave, 1 : Master */
 #define ADAU1962_SAI_MS							((uint8_t[]){1}) // ADAU1962 is used as master clock
 
@@ -117,7 +117,7 @@ void ADAU1962_init(void);
 /* 0 : auto mute disable, 1 : enable (after 1024 zero in)*/
 #define ADAU1962_AUTO_MUTE_EN 					((uint8_t[]){0})
 /* 0 : 256*fs oversampling, 1 : 128 */
-#define ADAU1962_DAC_OSR 						((uint8_t[]){1})
+#define ADAU1962_DAC_OSR 						((uint8_t[]){0})
 /* 0 : no de-enphasis/flat, 1 : de-emphasis enable */
 #define ADAU1962_DE_EMP_EN						((uint8_t[]){0})
 

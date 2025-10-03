@@ -67,8 +67,85 @@ static void printEvent(uint32_t event)
     }
 }
 
-static volatile uint8_t rxCallbackCount = 0;
+
+
+
+typedef enum { BUF_PING = 0, BUF_PONG = 1 } BufSel;
+
+// Assumptions from your DMATransfer() order:
+// - RX descriptor list starts at Ping -> first RX processed will be PING
+// - TX descriptor list starts at Ping -> TX starts sending PING first
+static volatile BufSel rxNextProcessed = BUF_PING;  // which RX half will report next
+static volatile BufSel txNow           = BUF_PING;  // TX half currently being sent
+static volatile BufSel txFree          = BUF_PONG;  // therefore PONG is free at t0
+static volatile int    txFreeValid     = 1;         // free TX half available at t0
+
+// NEW: latch the most recent RX completion when TX isn't free yet
+static volatile int    rxPendingValid  = 0;
+static volatile BufSel rxPendingSel    = BUF_PING;
+
+static inline void copyRxToTx(BufSel rxSel, BufSel txSel)
+{
+    const int32_t* __restrict src =
+        (rxSel == BUF_PING) ? (const int32_t*)bufferRxPing : (const int32_t*)bufferRxPong;
+    int32_t* __restrict dst =
+        (txSel == BUF_PING) ? (int32_t*)bufferTxPing : (int32_t*)bufferTxPong;
+
+    // Your fan-out (L,R,0,0) repeated across 12 slots:
+    map4to12(src, dst);
+}
+
+// ---- REPLACE your SportCallback with this no-drop version ----
 void SportCallback(void *pAppHandle, uint32_t event, void *pArg)
+{
+    switch (event)
+    {
+        case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
+        {
+            // Identify which RX half just completed
+            BufSel rxJust = rxNextProcessed;
+            rxNextProcessed = (rxNextProcessed == BUF_PING) ? BUF_PONG : BUF_PING;
+
+            if (txFreeValid) {
+                // TX free now -> copy immediately
+                copyRxToTx(rxJust, txFree);
+                txFreeValid    = 0;       // free slot consumed
+                rxPendingValid = 0;       // nothing pending anymore
+            } else {
+                // TX not free yet -> remember this RX until TX finishes
+                rxPendingSel   = rxJust;
+                rxPendingValid = 1;
+            }
+            break;
+        }
+
+        case ADI_SPORT_EVENT_TX_BUFFER_PROCESSED:
+        {
+            // The TX buffer that just finished becomes the new free buffer
+            BufSel justSent = txNow;
+            txNow = (txNow == BUF_PING) ? BUF_PONG : BUF_PING;
+            txFree = justSent;
+
+            if (rxPendingValid) {
+                // We have a latched RX block waiting -> use the newly free TX half now
+                copyRxToTx(rxPendingSel, txFree);
+                rxPendingValid = 0;
+                txFreeValid    = 0; // we've consumed the free slot by writing into it
+            } else {
+                // No RX ready -> leave the free slot available
+                txFreeValid = 1;
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+
+static volatile uint8_t rxCallbackCount = 0;
+void SportCallback2(void *pAppHandle, uint32_t event, void *pArg)
 {
 	//printEvent(event);
 	switch (event)
@@ -88,7 +165,6 @@ void SportCallback(void *pAppHandle, uint32_t event, void *pArg)
 			break;
 	}
 }
-
 
 static inline int _chk(const char* what, ADI_SPORT_RESULT r)
 {
@@ -128,6 +204,7 @@ int sport_init(void)
             &handleSport4BRx);
     if (_chk("Open 4B RX", r)) return APP_FAILED;
 
+    //adi_sport_MuxHalfSport(handleSport4BRx, /*bUseOtherFS*/true, /*bUseOtherClk*/true);
     /* 1) Data format on both halves:
        - 32-bit slots (SLEN = 31)
        - MSB-first
@@ -160,7 +237,7 @@ int sport_init(void)
             handleSport4ATx,
             /*ratio*/1,
             /*use internal*/false,      /* external BCLK */
-            /*bFallingEdge*/true,       /* TX: launch on FALLING (DAC samples on RISING) */
+            /*bFallingEdge*/!false,       /* TX (feeding DAC): DAC latches on falling → SPORT TX should launch on rising → bFallingEdge = false.*/
             /*gated*/false);
     if (_chk("ConfigClock 4A TX (launch on FALLING)", r)) return APP_FAILED;
 
@@ -168,7 +245,7 @@ int sport_init(void)
             handleSport4BRx,
             /*ratio*/1,
             /*use internal*/false,      /* external BCLK */
-            /*bFallingEdge*/true,       /* RX: sample on FALLING (ADC changes on RISING) */
+            /*bFallingEdge*/!true,       /* RX (listening to ADC): ADC changes on rising → SPORT RX should sample on falling → bFallingEdge = true. */
             /*gated*/false);
     if (_chk("ConfigClock 4B RX (sample on FALLING)", r)) return APP_FAILED;
 
@@ -244,17 +321,10 @@ int sport_init(void)
         bufferTxPong[k] = 0;
     }
 
-    /* Initial free-flag state for double-buffering:
-       - TX starts by sending Ping first (per descriptor list order),
-         so the FREE buffer (for CPU writes) should be PONG until we
-         receive the first TX-buffer-processed callback.
-    */
     /* 7) Register callbacks (recommend printing events inside the callback). */
-    r = adi_sport_RegisterCallback(handleSport4BRx, SportCallback, handleSport4BRx);
-    if (_chk("RegisterCb 4B RX", r)) return APP_FAILED;
 
-    r = adi_sport_RegisterCallback(handleSport4ATx, SportCallback, handleSport4ATx);
-    if (_chk("RegisterCb 4A TX", r)) return APP_FAILED;
+    adi_sport_RegisterCallback(handleSport4BRx, SportCallback, handleSport4BRx);
+    adi_sport_RegisterCallback(handleSport4ATx, SportCallback, handleSport4ATx);
 
     /* 8) Prepare PDMA descriptor chains (Ping<->Pong circular). */
     PrepareDescriptors();
@@ -286,11 +356,3 @@ int sport_init(void)
     printf("SPORT initialized (core=%u)\n", (unsigned)adi_core_id());
     return APP_SUCCESS;
 }
-
-
-
-
-
-
-
-

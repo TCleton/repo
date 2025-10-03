@@ -22,10 +22,6 @@
 #define MCLK_FS_RATIO			128u		//used for ADAU1962 ADAU1979 and SPORT
 #define WORD_LEN				32u 		//used for ADAU1962 ADAU1979 and SPORT
 
-// TDM
-#define TDM_TX_SLOT				4u			//
-#define TDM_RX_SLOT				12u			//
-
 // ADAU configs
 	// reserved arrays
 #define RESERVED1							((uint8_t[]){0})
@@ -43,14 +39,13 @@
 //#define VREF_EN 							((uint8_t[]){0})
 #define SDATA_FMT							((uint8_t[]){0,1}) //01->left justified 0block cycle delay
 #define SAI									((uint8_t[]){1,0,0}) //100-> TDM16 packed
-#define SAI_MSB								((uint8_t[]){0})
+#define SAI_MSB								((uint8_t[]){0}) //MSB first
 #define LRCLK_POL							((uint8_t[]){0})
-#define LRCLK_MODE							((uint8_t[]){1}) //0->50% duty cycle DLRCLK 1->pulse
-#define BCLK_EDGE_DAC   					((uint8_t[]){0}) // 0 => ADAU1962A samples on RISING edge
-#define BCLK_EDGE_ADC  						((uint8_t[]){1}) // 1 => ADAU1979 changes data on RISING edge
+#define LRCLK_MODE							((uint8_t[]){1}) //0->50% duty cycle DLRCLK 1->pulse mode
+#define BCLK_EDGE   						((uint8_t[]){1}) // 0 => ADAU1962A samples on RISING edge
 #define BCLK_RATE							((uint8_t[]){0}) //0-> 32 BCLK per TDM channel, only used when generating the BCLK
 /* 00 : low power, 01 lowest power, 10 best performance, 11 good performance */
-#define DAC_POWER						((uint8_t[]){1,1})
+#define DAC_POWER						((uint8_t[]){1,0})
 
 
 //TWI

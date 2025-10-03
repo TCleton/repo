@@ -12,7 +12,7 @@
 #define PDMA_CFG_COMMON   (ENUM_DMA_CFG_XCNT_INT | ENUM_DMA_CFG_COPY)
 #define PDMA_CFG_RX (ENUM_DMA_CFG_XCNT_INT)
 
-#define samplesPerBlock 512u      // frames per DMA block
+#define samplesPerBlock 128u      // frames per DMA block
 
 #define SLOTS_TX     12u//12
 #define SLOTS_RX     4u//4
