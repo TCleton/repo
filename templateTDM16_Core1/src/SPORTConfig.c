@@ -237,7 +237,7 @@ int sport_init(void)
             handleSport4ATx,
             /*ratio*/1,
             /*use internal*/false,      /* external BCLK */
-            /*bFallingEdge*/!false,       /* TX (feeding DAC): DAC latches on falling → SPORT TX should launch on rising → bFallingEdge = false.*/
+            /*bFallingEdge*/true,       /* TX (feeding DAC): DAC latches on falling → SPORT TX should launch on rising → bFallingEdge = false.*/
             /*gated*/false);
     if (_chk("ConfigClock 4A TX (launch on FALLING)", r)) return APP_FAILED;
 
@@ -245,7 +245,7 @@ int sport_init(void)
             handleSport4BRx,
             /*ratio*/1,
             /*use internal*/false,      /* external BCLK */
-            /*bFallingEdge*/!true,       /* RX (listening to ADC): ADC changes on rising → SPORT RX should sample on falling → bFallingEdge = true. */
+            /*bFallingEdge*/false,       /* RX (listening to ADC): ADC changes on rising → SPORT RX should sample on falling → bFallingEdge = true. */
             /*gated*/false);
     if (_chk("ConfigClock 4B RX (sample on FALLING)", r)) return APP_FAILED;
 

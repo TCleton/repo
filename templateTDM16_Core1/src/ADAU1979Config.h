@@ -149,19 +149,3 @@ void ADAU1979_init(void);
 
 
 #endif /* ADAU1979CONFIG_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

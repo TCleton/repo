@@ -140,8 +140,8 @@ void map4to12(const int32_t* __restrict rx, int32_t* __restrict tx)
 
         const int32_t in0 = rx[r + 0];
         const int32_t in1 = rx[r + 1];
-        const int32_t in2 = rx[r + 2]*0;
-        const int32_t in3 = rx[r + 3]*0;
+        const int32_t in2 = rx[r + 2];
+        const int32_t in3 = rx[r + 3];
 
         // Write 12 TX slots for this frame (3x fan-out of the 4 RX channels)
         tx[t + 0]  = in0;  tx[t + 1]  = in1;  tx[t + 2]  = in2;  tx[t + 3]  = in3;
