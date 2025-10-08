@@ -14,7 +14,7 @@
 #include "SoftConfig.h"
 #include <sys/platform.h>
 #include <sys/adi_core.h>
-
+#include "AudioIO.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -131,7 +131,7 @@ static void printBits(uint32_t value) {
     }
 }
 
-void map4to12(const int32_t* __restrict rx, int32_t* __restrict tx)
+void mapANtoDAC(const int32_t* __restrict rx, int32_t* __restrict tx)
 {
     for (uint32_t f = 0; f < samplesPerBlock; ++f)
     {
@@ -149,6 +149,28 @@ void map4to12(const int32_t* __restrict rx, int32_t* __restrict tx)
         tx[t + 8]  = in0;  tx[t + 9]  = in1;  tx[t +10]  = in2;  tx[t +11]  = in3;
     }
 }
+
+
+void processBlock(const int32_t* inputBuffer, int32_t* outputBuffer)
+{
+    const uint32_t inChannels  = numberOfInputChannels;
+    const uint32_t outChannels = numberOfOutputChannels;
+
+    for (uint32_t f = 0; f < samplesPerBlock; ++f) {
+        const int32_t *inF  = &inputBuffer [inChannels  * f];
+        int32_t       *outF = &outputBuffer[outChannels * f];
+
+        /* Default mapping (your current behavior):
+           DAC1..12 = repeat {AN1,AN2,AN3,AN4} across 12 channels */
+        outF[ 0] = inF[0]; outF[ 1] = inF[1]; outF[ 2] = inF[2]; outF[ 3] = inF[3];
+        outF[ 4] = inF[0]; outF[ 5] = inF[1]; outF[ 6] = inF[2]; outF[ 7] = inF[3];
+        outF[ 8] = inF[0]; outF[ 9] = inF[1]; outF[10] = inF[2]; outF[11] = inF[3];
+
+        /* Any additional outputs (COAX OUT) are zero for now. */
+        for (uint32_t ch = 12u; ch < outChannels; ++ch) outF[ch] = 0;
+    }
+}
+
 
 
 int main(int argc, char *argv[])
@@ -173,6 +195,8 @@ int main(int argc, char *argv[])
     TwiSetAddr(I2cAddrAdau1979);
     ADAU1979_init();
 
+    AudioIO_setCoaxState(COAX_IN_IN);
+    AudioIO_applyConfiguration();
     sport_init();
 
     TwiClose();

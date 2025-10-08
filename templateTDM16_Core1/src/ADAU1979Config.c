@@ -15,8 +15,10 @@ void writeM_POWER(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_M_POWER, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_M_POWER write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_M_POWER);
 	printf("ADAU1979_M_POWER should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePLL_CONTROL(void) {
@@ -35,8 +37,10 @@ void writePLL_CONTROL(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_PLL_CONTROL, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_PLL_CONTROL write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_PLL_CONTROL);
 	printf("ADAU1979_PLL_CONTROL should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeBLOCK_POWER_SAI(void) {
@@ -57,8 +61,10 @@ void writeBLOCK_POWER_SAI(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_BLOCK_POWER_SAI, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_BLOCK_POWER_SAI write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_BLOCK_POWER_SAI);
 	printf("ADAU1979_BLOCK_POWER_SAI should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeSAI_CTRL0(void) {
@@ -74,8 +80,10 @@ void writeSAI_CTRL0(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_SAI_CTRL0, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_SAI_CTRL0 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_SAI_CTRL0);
 	printf("ADAU1979_SAI_CTRL0 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeSAI_CTRL1(void) {
@@ -95,8 +103,10 @@ void writeSAI_CTRL1(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_SAI_CTRL1, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_SAI_CTRL1 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_SAI_CTRL1);
 	printf("ADAU1979_SAI_CTRL1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeSAI_CMAP12(void) {
@@ -111,8 +121,10 @@ void writeSAI_CMAP12(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_SAI_CMAP12, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_SAI_CMAP12 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_SAI_CMAP12);
 	printf("ADAU1979_SAI_CMAP12 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeSAI_CMAP34(void) {
@@ -127,8 +139,10 @@ void writeSAI_CMAP34(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_SAI_CMAP34, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_SAI_CMAP34 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_SAI_CMAP34);
 	printf("ADAU1979_SAI_CMAP34 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeSAI_OVERTEMP(void) {
@@ -149,8 +163,10 @@ void writeSAI_OVERTEMP(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_SAI_OVERTEMP, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_SAI_OVERTEMP write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_SAI_OVERTEMP);
 	printf("ADAU1979_SAI_OVERTEMP should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePOSTADC_GAIN1(void) {
@@ -164,8 +180,10 @@ void writePOSTADC_GAIN1(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_POSTADC_GAIN1, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_POSTADC_GAIN1 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_POSTADC_GAIN1);
 	printf("ADAU1979_POSTADC_GAIN1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePOSTADC_GAIN2(void) {
@@ -179,8 +197,10 @@ void writePOSTADC_GAIN2(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_POSTADC_GAIN2, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_POSTADC_GAIN2 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_POSTADC_GAIN2);
 	printf("ADAU1979_POSTADC_GAIN2 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePOSTADC_GAIN3(void) {
@@ -194,8 +214,10 @@ void writePOSTADC_GAIN3(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_POSTADC_GAIN3, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_POSTADC_GAIN3 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_POSTADC_GAIN3);
 	printf("ADAU1979_POSTADC_GAIN3 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePOSTADC_GAIN4(void) {
@@ -209,8 +231,10 @@ void writePOSTADC_GAIN4(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_POSTADC_GAIN4, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_POSTADC_GAIN4 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_POSTADC_GAIN4);
 	printf("ADAU1979_POSTADC_GAIN4 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeMISC_CONTROL(void) {
@@ -228,8 +252,10 @@ void writeMISC_CONTROL(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_MISC_CONTROL, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_MISC_CONTROL write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_MISC_CONTROL);
 	printf("ADAU1979_MISC_CONTROL should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDC_HPF_CAL(void) {
@@ -250,8 +276,10 @@ void writeDC_HPF_CAL(void) {
     ADI_TWI_RESULT r = TwiWrite8(ADAU1979_DC_HPF_CAL, word);
 
 	if (r == ADI_TWI_FAILURE){ printf("ADAU1979_DC_HPF_CAL write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1979_DC_HPF_CAL);
 	printf("ADAU1979_DC_HPF_CAL should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 

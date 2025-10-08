@@ -20,5 +20,5 @@ int Soft_FindExpanderAddr(uint8_t *found);
 extern ADI_TWI_HANDLE sTwiHandle;
 uint8_t getNumFromBits(int numArrays, uint8_t* arrays[], int sizes[]);
 
-void map4to12(const int32_t* __restrict rx, int32_t* __restrict tx);
+void mapANtoDAC(const int32_t* __restrict rx, int32_t* __restrict tx);
 #endif /* __TEMPLATETDM16_CORE1_H__ */

@@ -15,10 +15,11 @@ void writePLL_CLK_CTRL0(void) {
 
     uint8_t word = getNumFromBits(numArrays, arrays, sizes);
     ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PLL_CLK_CTRL0, word);
-
     if (r == ADI_TWI_FAILURE){ printf("PLL_CLK_CTRL0 write failed"); }
+    /*
 	uint8_t word2 = TwiRead8(ADAU1962_PLL_CLK_CTRL0);
 	printf("PLL_CLK_CTRL0 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePLL_CLK_CTRL1(void) {
@@ -34,10 +35,11 @@ void writePLL_CLK_CTRL1(void) {
     };
     uint8_t word = getNumFromBits(numArrays, arrays, sizes);
     ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PLL_CLK_CTRL1, word);
-
     if (r == ADI_TWI_FAILURE){ printf("PLL_CLK_CTRL1 write failed"); }
+    /*
 	uint8_t word2 = TwiRead8(ADAU1962_PLL_CLK_CTRL1);
 	printf("PLL_CLK_CTRL1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePDN_THRMSENS_CTRL_1(void) {
@@ -53,10 +55,11 @@ void writePDN_THRMSENS_CTRL_1(void) {
     };
     uint8_t word = getNumFromBits(numArrays, arrays, sizes);
     ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PDN_THRMSENS_CTRL_1, word);
-
     if (r == ADI_TWI_FAILURE){ printf("PDN_THRMSENS_CTRL_1 write failed"); }
+    /*
 	uint8_t word2 = TwiRead8(ADAU1962_PDN_THRMSENS_CTRL_1);
 	printf("PDN_THRMSENS_CTRL_1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePDN_CTRL2(void){
@@ -74,10 +77,11 @@ void writePDN_CTRL2(void){
 	};
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PDN_CTRL2, word);
-
 	if (r == ADI_TWI_FAILURE){ printf("PDN_CTRL2 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_PDN_CTRL2);
 	printf("PDN_CTRL2 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writePDN_CTRL3(void){
@@ -95,10 +99,11 @@ void writePDN_CTRL3(void){
 	};
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PDN_CTRL3, word);
-
 	if (r == ADI_TWI_FAILURE){ printf("PDN_CTRL3 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_PDN_CTRL3);
 	printf("PDN_CTRL3 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_CTRL0(void){
@@ -113,10 +118,11 @@ void writeDAC_CTRL0(void){
 
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_DAC_CTRL0, word);
-
 	if (r == ADI_TWI_FAILURE){printf("DAC_CTRL0 write failed");}
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_DAC_CTRL0);
 	printf("DAC_CTRL0 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_CTRL1(void){
@@ -135,8 +141,10 @@ void writeDAC_CTRL1(void){
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_DAC_CTRL1, word);
 	if (r == ADI_TWI_FAILURE){ printf("DAC_CRTL1 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_DAC_CTRL1);
 	printf("DAC_CTRL1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 
 
 }
@@ -156,8 +164,10 @@ void writeDAC_CTRL2(void){
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_DAC_CTRL2, word);
 	if (r == ADI_TWI_FAILURE){ printf("DAC_CRTL2 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_DAC_CTRL2);
 	printf("DAC_CTRL2 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_MUTE1(void){
@@ -176,8 +186,10 @@ void writeDAC_MUTE1(void){
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_DAC_MUTE1, word);
 	if (r == ADI_TWI_FAILURE){ printf("DAC_MUTE1 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_DAC_MUTE1);
 	printf("DAC_MUTE1 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_MUTE2(void){
@@ -196,8 +208,10 @@ void writeDAC_MUTE2(void){
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_DAC_MUTE2, word);
 	if (r == ADI_TWI_FAILURE){ printf("DAC_MUTE2 write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_DAC_MUTE2);
 	printf("DAC_MUTE2 should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_VOL(void){
@@ -255,8 +269,10 @@ void writePAD_STRGTH(void){
 	uint8_t word = getNumFromBits(numArrays, arrays, sizes);
 	ADI_TWI_RESULT r = TwiWrite8(ADAU1962_PAD_STRGTH, word);
 	if (r == ADI_TWI_FAILURE){ printf("PAD_STRGTH write failed"); }
+	/*
 	uint8_t word2 = TwiRead8(ADAU1962_PAD_STRGTH);
 	printf("PAD_STRGTH should be 0x%02X and it is 0x%02X\n", word, word2);
+	*/
 }
 
 void writeDAC_POWER(void){

@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <sys/adi_core.h>
 #include "SPUConfig.h"
-#include"sharedConfig.h"
+#include "sharedConfig.h"
+#include "AudioIO.h"
 #include <sys/cache.h>
 #include <stdio.h>
 #include <string.h>
@@ -67,83 +68,6 @@ static void printEvent(uint32_t event)
     }
 }
 
-
-
-
-typedef enum { BUF_PING = 0, BUF_PONG = 1 } BufSel;
-
-// Assumptions from your DMATransfer() order:
-// - RX descriptor list starts at Ping -> first RX processed will be PING
-// - TX descriptor list starts at Ping -> TX starts sending PING first
-static volatile BufSel rxNextProcessed = BUF_PING;  // which RX half will report next
-static volatile BufSel txNow           = BUF_PING;  // TX half currently being sent
-static volatile BufSel txFree          = BUF_PONG;  // therefore PONG is free at t0
-static volatile int    txFreeValid     = 1;         // free TX half available at t0
-
-// NEW: latch the most recent RX completion when TX isn't free yet
-static volatile int    rxPendingValid  = 0;
-static volatile BufSel rxPendingSel    = BUF_PING;
-
-static inline void copyRxToTx(BufSel rxSel, BufSel txSel)
-{
-    const int32_t* __restrict src =
-        (rxSel == BUF_PING) ? (const int32_t*)bufferRxPing : (const int32_t*)bufferRxPong;
-    int32_t* __restrict dst =
-        (txSel == BUF_PING) ? (int32_t*)bufferTxPing : (int32_t*)bufferTxPong;
-
-    // Your fan-out (L,R,0,0) repeated across 12 slots:
-    map4to12(src, dst);
-}
-
-// ---- REPLACE your SportCallback with this no-drop version ----
-void SportCallback(void *pAppHandle, uint32_t event, void *pArg)
-{
-    switch (event)
-    {
-        case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
-        {
-            // Identify which RX half just completed
-            BufSel rxJust = rxNextProcessed;
-            rxNextProcessed = (rxNextProcessed == BUF_PING) ? BUF_PONG : BUF_PING;
-
-            if (txFreeValid) {
-                // TX free now -> copy immediately
-                copyRxToTx(rxJust, txFree);
-                txFreeValid    = 0;       // free slot consumed
-                rxPendingValid = 0;       // nothing pending anymore
-            } else {
-                // TX not free yet -> remember this RX until TX finishes
-                rxPendingSel   = rxJust;
-                rxPendingValid = 1;
-            }
-            break;
-        }
-
-        case ADI_SPORT_EVENT_TX_BUFFER_PROCESSED:
-        {
-            // The TX buffer that just finished becomes the new free buffer
-            BufSel justSent = txNow;
-            txNow = (txNow == BUF_PING) ? BUF_PONG : BUF_PING;
-            txFree = justSent;
-
-            if (rxPendingValid) {
-                // We have a latched RX block waiting -> use the newly free TX half now
-                copyRxToTx(rxPendingSel, txFree);
-                rxPendingValid = 0;
-                txFreeValid    = 0; // we've consumed the free slot by writing into it
-            } else {
-                // No RX ready -> leave the free slot available
-                txFreeValid = 1;
-            }
-            break;
-        }
-
-        default:
-            break;
-    }
-}
-
-
 static volatile uint8_t rxCallbackCount = 0;
 void SportCallback2(void *pAppHandle, uint32_t event, void *pArg)
 {
@@ -154,13 +78,39 @@ void SportCallback2(void *pAppHandle, uint32_t event, void *pArg)
 		case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
 			rxCallbackCount += 1;
 			if (rxCallbackCount == 1) {
-				map4to12((const int32_t*)bufferRxPing, (int32_t*)bufferTxPing);
+				mapANtoDAC((const int32_t*)bufferRxPing, (int32_t*)bufferTxPing);
 			}
 			if (rxCallbackCount == 2) {
-				map4to12((const int32_t*)bufferRxPong, (int32_t*)bufferTxPong);
+				mapANtoDAC((const int32_t*)bufferRxPong, (int32_t*)bufferTxPong);
 				rxCallbackCount = 0;
 			}
 			break;
+		default:
+			break;
+	}
+}
+
+void SportCallback(void *pAppHandle, uint32_t event, void *pArg)
+{
+	//printEvent(event);
+	switch (event)
+	{
+		/* CASE (buffer processed) */
+	case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
+	    rxCallbackCount += 1;
+	    if (rxCallbackCount == 1) {
+	        /* PING */
+	        fillInputBufferFromAN((const int32_t*)bufferRxPing);
+	        processBlock(inputBufferBlock, outputBufferBlock);
+	        fillDACFromOutputBuffer((int32_t*)bufferTxPong);
+	    } else if (rxCallbackCount == 2) {
+	        /* PONG */
+	        fillInputBufferFromAN((const int32_t*)bufferRxPong);
+	        processBlock(inputBufferBlock, outputBufferBlock);
+	        fillDACFromOutputBuffer((int32_t*)bufferTxPing);
+	        rxCallbackCount = 0;
+	    }
+	    break;
 		default:
 			break;
 	}
