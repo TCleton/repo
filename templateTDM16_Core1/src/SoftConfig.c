@@ -6,7 +6,7 @@
 // IMPORTANT: Call TwiOpen() first, and TwiSetAddr(I2cAddrSOFTConfig) before Soft_init().
 
 #include <stdint.h>
-#include "templateTDM16_Core1.h"  // TwiWrite8(), TwiRead8() prototypes
+#include "TWI.h"
 #include "SoftConfig.h"
 
 

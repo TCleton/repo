@@ -17,6 +17,7 @@
 #ifndef SHAREDCONFIG_H_
 #define SHAREDCONFIG_H_
 
+#include <stdint.h>
 
 #define FS						48000u		//used for ADAU1962 ADAU1979 and SPORT
 #define MCLK_FS_RATIO			128u		//used for ADAU1962 ADAU1979 and SPORT
@@ -47,14 +48,6 @@
 /* 00 : low power, 01 lowest power, 10 best performance, 11 good performance */
 #define DAC_POWER						((uint8_t[]){1,0})
 
-
-//TWI
-/* TWI controller used to program SoftConfig + codecs (board default = TWI2). */
-#define TwiDevNum               (2u)
-#define TwiBitrateKHz           (100u)
-#define TwiDutyCyclePct         (50u)
-/* Per BSP example: prescale for ~10 MHz SCLK base -> 100 kHz TWI. */
-#define TwiPrescale             (12u)
-
+uint8_t getNumFromBits(int numArrays, uint8_t* arrays[], int sizes[]);
 
 #endif /* SHAREDCONFIG_H_ */

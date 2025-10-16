@@ -2,15 +2,21 @@
 #define SPORTCONFIG_H_
 
 #include <drivers/sport/adi_sport.h>
+#include <drivers/spdif/adi_spdif_rx.h>
+#include <drivers/spdif/adi_spdif_tx.h>
 
-/* SPORT driver handles and per-device memory (required by the driver). */
-ADI_SPORT_HANDLE handleSport4ATx;   /* SPORT4A, Tx transmit data to the dac*/
-ADI_SPORT_HANDLE handleSport4BRx;   /* SPORT4B, Rx receive data from the adc */
-
-uint8_t memorySport4ATx[ADI_SPORT_MEMORY_SIZE];
-uint8_t memorySport4BRx[ADI_SPORT_MEMORY_SIZE];
-
+// ADC and DAC
 #define SportDeviceNum4  4u // Sport4
+extern uint8_t memorySport4ATx[ADI_SPORT_MEMORY_SIZE];
+extern uint8_t memorySport4BRx[ADI_SPORT_MEMORY_SIZE];
+
+// SPDIF
+#define SpdifDeviceNum  0u //
+extern uint8_t memorySpdifRx[ADI_SPDIF_RX_MEMORY_SIZE];
+extern uint8_t memorySpdifTx[ADI_SPDIF_TX_MEMORY_SIZE];
+
+// functions
+
 void SportCallback(void *pAppHandle, uint32_t event, void *pArg);
 int sport_init(void);
 

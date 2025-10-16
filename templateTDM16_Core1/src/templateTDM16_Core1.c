@@ -1,183 +1,65 @@
 /*****************************************************************************
  * templateTDM16_Core1.c
  *****************************************************************************/
-
+#include <time.h>
 #include "adi_initialize.h"
+#include <sys/platform.h>
+#include <sys/adi_core.h>
+
 #include "templateTDM16_Core1.h"
+#include "PingPongBuffer.h"
 #include "ADAU1962Config.h"
 #include "ADAU1979Config.h"
 #include "sharedConfig.h"
-#include "DMAConfig.h"
 #include "SPORTConfig.h"
+#include "SoftConfig.h"
 #include "SRUConfig.h"
 #include "SPUConfig.h"
-#include "SoftConfig.h"
-#include <sys/platform.h>
-#include <sys/adi_core.h>
 #include "AudioIO.h"
+#include "TWI.h"
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/platform.h>
-#include <sys/adi_core.h>
-#include "adi_initialize.h"
-#include <services/int/adi_int.h>
-#include <drivers/sport/adi_sport.h>
-#include <services/spu/adi_spu.h>
-#include <drivers/twi/adi_twi.h>
-#include "math.h"
-#include <SRU.h>
+// If you plan to disable Jacks dynamically, gate it here:
+static inline bool isJackActive(void) { return true; /* or a runtime flag */ }
 
-// ========================= functions =======================
-
-uint8_t getNumFromBits(int numArrays, uint8_t* arrays[], int sizes[]) {
-	// this function takes any number of arrays (numArrays), each array contains a certain number of bits given in the sizes array
-	// it bascally creates a uint8_t word from all those bits so sum(sizes) should be 8.
-	uint8_t result = 0;
-    for (int i = 0; i < numArrays; ++i) {
-        for (int j = 0; j < sizes[i]; ++j) {
-            result = (result << 1) | (arrays[i][j] & 1);
-        }
+void processBlock(void)
+{
+    if (!globalStream.Rx.isFreshData){
+    	printf("processedBlock returned because globalStream.Rx.isFreshData = false\n");
+        return;
     }
-    return result;
-}
+    const uint32_t * __restrict in  = (const uint32_t*)globalStream.Rx.readPtr;
+    uint32_t       * __restrict out = (uint32_t*)      globalStream.Tx.writePtr;
 
-
-static void delay_ms(uint32_t ms)
-{
-    // Simple coarse delay; at 1 GHz core, ~100k iterations ~0.1 ms (tune as needed)
-    volatile uint32_t loops = ms * 100000u;
-    while (loops--) { __asm__ __volatile__("nop;"); }
-}
-
-// =========================   ENABLE COMMUNICATION TO READ/WRITE TO THE DEVICES VIA TWI/I2C =======================
-ADI_TWI_HANDLE   sTwiHandle = NULL;
-static uint8_t          sTwiDevMem[ADI_TWI_MEMORY_SIZE];
-static uint8_t          sTwiBuf[32]; /* small scratch buffer */
-
-
-int TwiOpen(void)
-{
-    ADI_TWI_RESULT r;
-    r = adi_twi_Open(TwiDevNum, ADI_TWI_MASTER, sTwiDevMem, sizeof sTwiDevMem, &sTwiHandle);
-    if (r != ADI_TWI_SUCCESS) { printf("TWI open failed 0x%X\n", r); return APP_FAILED; }
-    if ((r = adi_twi_SetPrescale(sTwiHandle, TwiPrescale)) != ADI_TWI_SUCCESS) { printf("TWI prescale fail 0x%X\n", r); return APP_FAILED; }
-    if ((r = adi_twi_SetBitRate(sTwiHandle, TwiBitrateKHz)) != ADI_TWI_SUCCESS){ printf("TWI bitrate fail 0x%X\n", r);  return APP_FAILED; }
-    if ((r = adi_twi_SetDutyCycle(sTwiHandle, TwiDutyCyclePct)) != ADI_TWI_SUCCESS){ printf("TWI duty fail 0x%X\n", r);  return APP_FAILED; }
-    printf("TWI opened\n");
-    return APP_SUCCESS;
-}
-
-
-/* Change the active 7-bit address without closing */
-static uint16_t sActiveI2CAddr = 0xFFFF;
-int TwiSetAddr(uint16_t addr)
-{
-    ADI_TWI_RESULT r = adi_twi_SetHardwareAddress(sTwiHandle, addr);
-    if (r != ADI_TWI_SUCCESS) {
-        printf("TWI: SetHardwareAddress(0x%02X) FAILED (0x%X)\n", addr, r);
-        return APP_FAILED;
-    }
-    sActiveI2CAddr = addr;
-    // Optional: small settle is not required, but the print helps debugging
-    printf("TWI: active 7-bit addr = 0x%02X\n", addr);
-    return APP_SUCCESS;
-}
-
-int TwiClose(void)
-{
-    ADI_TWI_RESULT r = adi_twi_Close(sTwiHandle);
-    sTwiHandle = NULL;
-    return (r == ADI_TWI_SUCCESS) ? APP_SUCCESS : APP_FAILED;
-}
-
-/* Write an 8-bit register of the currently-selected device */
-ADI_TWI_RESULT TwiWrite8(uint8_t reg, uint8_t val)
-{
-    sTwiBuf[0] = reg;
-    sTwiBuf[1] = val;
-    ADI_TWI_RESULT r = adi_twi_Write(sTwiHandle, sTwiBuf, 2u, false);
-    int delay1=0xffff;
-	while(delay1--)
-	{
-		asm("nop;");
-	}
-    return r;
-}
-
-/* Read an 8-bit register of the currently-selected device */
-uint8_t TwiRead8(uint8_t reg)
-{
-    ADI_TWI_RESULT r;
-    uint8_t v = 0;
-    sTwiBuf[0] = reg;
-    r = adi_twi_Write(sTwiHandle, sTwiBuf, 1u, true);  // repeated-start
-    if (r == ADI_TWI_SUCCESS) {
-        r = adi_twi_Read(sTwiHandle, &v, 1u, false);
-    }
-    if (r != ADI_TWI_SUCCESS) {
-        printf("TWI READ FAIL addr=0x%02X reg=0x%02X err=0x%X\n", sActiveI2CAddr, reg, r);
-    }
-    return v;
-}
-
-// processing :
-static void printBits(uint32_t value) {
-    for(int bit = 31; bit >= 0; bit--) {
-        printf("%d", (value >> bit) & 1);
-        if(bit % 8 == 0 && bit != 0) printf(" "); // Space every 8 bits for readability
-    }
-}
-
-void mapANtoDAC(const int32_t* __restrict rx, int32_t* __restrict tx)
-{
-    for (uint32_t f = 0; f < samplesPerBlock; ++f)
+    for (uint32_t f = 0; f < SAMPLES_PER_BLOCK; ++f)
     {
-        const uint32_t r = 4u  * f;   // RX base (4 words per frame)
-        const uint32_t t = 12u * f;   // TX base (12 words per frame)
+        const uint32_t *frameIn  = &in [(SLOTS_RX + SLOTS_SPDIF) * f];
+        uint32_t       *frameOut = &out[(SLOTS_TX + SLOTS_SPDIF) * f];
 
-        const int32_t in0 = rx[r + 0];
-        const int32_t in1 = rx[r + 1];
-        const int32_t in2 = rx[r + 2];
-        const int32_t in3 = rx[r + 3];
+        // Use your symbolic indexes for clarity
+        frameOut[OUT_DAC01] = frameIn[IN_AN1];  frameOut[OUT_DAC02] = frameIn[IN_AN2];
+        frameOut[OUT_DAC03] = frameIn[IN_AN3];  frameOut[OUT_DAC04] = frameIn[IN_AN4];
+        frameOut[OUT_DAC05] = frameIn[IN_AN1];  frameOut[OUT_DAC06] = frameIn[IN_AN2];
+        frameOut[OUT_DAC07] = frameIn[IN_AN3];  frameOut[OUT_DAC08] = frameIn[IN_AN4];
+        frameOut[OUT_DAC09] = frameIn[IN_AN1];  frameOut[OUT_DAC10] = frameIn[IN_AN2];
+        frameOut[OUT_DAC11] = frameIn[IN_AN3];  frameOut[OUT_DAC12] = frameIn[IN_AN4];
 
-        // Write 12 TX slots for this frame (3x fan-out of the 4 RX channels)
-        tx[t + 0]  = in0;  tx[t + 1]  = in1;  tx[t + 2]  = in2;  tx[t + 3]  = in3;
-        tx[t + 4]  = in0;  tx[t + 5]  = in1;  tx[t + 6]  = in2;  tx[t + 7]  = in3;
-        tx[t + 8]  = in0;  tx[t + 9]  = in1;  tx[t +10]  = in2;  tx[t +11]  = in3;
+        // SPDIF passthrough (optional)
+        frameOut[OUT_SPDIF_L] = frameIn[IN_SPDIF_L];
+        frameOut[OUT_SPDIF_R] = frameIn[IN_SPDIF_R];
     }
+    // Hand-off
+    globalStream.Rx.isFreshData = false;// we just process the data so it is not fresh anymore
+    flipPingPong(&globalStream.Tx);// has we processed the data we can flip buffers
+    globalStream.Tx.isFreshData = true;// we just filled new data to Tx
 }
-
-
-void processBlock(const int32_t* inputBuffer, int32_t* outputBuffer)
-{
-    const uint32_t inChannels  = numberOfInputChannels;
-    const uint32_t outChannels = numberOfOutputChannels;
-
-    for (uint32_t f = 0; f < samplesPerBlock; ++f) {
-        const int32_t *inF  = &inputBuffer [inChannels  * f];
-        int32_t       *outF = &outputBuffer[outChannels * f];
-
-        /* Default mapping (your current behavior):
-           DAC1..12 = repeat {AN1,AN2,AN3,AN4} across 12 channels */
-        outF[ 0] = inF[0]; outF[ 1] = inF[1]; outF[ 2] = inF[2]; outF[ 3] = inF[3];
-        outF[ 4] = inF[0]; outF[ 5] = inF[1]; outF[ 6] = inF[2]; outF[ 7] = inF[3];
-        outF[ 8] = inF[0]; outF[ 9] = inF[1]; outF[10] = inF[2]; outF[11] = inF[3];
-
-        /* Any additional outputs (COAX OUT) are zero for now. */
-        for (uint32_t ch = 12u; ch < outChannels; ++ch) outF[ch] = 0;
-    }
-}
-
-
 
 int main(int argc, char *argv[])
 {
     adi_initComponents();
 
     adi_core_enable(ADI_CORE_SHARC1);
+
+    initPingPongBuffers();
 
     TwiOpen();
 
@@ -195,15 +77,31 @@ int main(int argc, char *argv[])
     TwiSetAddr(I2cAddrAdau1979);
     ADAU1979_init();
 
-    AudioIO_setCoaxState(COAX_IN_IN);
+    AudioIO_setSPDIFState(SPDIF_DIGITAL_ON_OPTICAL_ON);
     AudioIO_applyConfiguration();
     sport_init();
 
     TwiClose();
 
     printf("main loop running...\n");
-    for(;;)
+    for (;;)
     {
+    	//printPingPongStates();
+        // 1) If JACK_RX produced a fresh block, import it into global RX
+        if (jackStream.Rx.isFreshData) {
+            fillGlobalInputFromAN();           // consumes jackStream.Rx, produces globalStream.Rx
+        }
+
+        // 2) If a unified RX block is fresh, run the DSP (global RX -> global TX)
+        if (globalStream.Rx.isFreshData) {
+            processBlock();                    // consumes globalStream.Rx, produces globalStream.Tx
+        }
+
+        // 3) If unified TX is fresh AND JACK_TX has no fresh data pending,
+        //    push unified TX into JACK TX frame
+        if (globalStream.Tx.isFreshData && !jackStream.Tx.isFreshData) {
+			fillDACOutputFromGlobal();         // consumes globalStream.Tx, produces jackStream.Tx
+		}
     }
 }
 

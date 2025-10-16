@@ -1,5 +1,4 @@
 #include "SPORTConfig.h"
-#include "DMAConfig.h"
 #include "templateTDM16_Core1.h"
 #include <drivers/sport/adi_sport.h>
 #include "templateTDM16_Core1.h"
@@ -11,10 +10,28 @@
 #include <sys/cache.h>
 #include <stdio.h>
 #include <string.h>
+#include "PingPongBuffer.h"
+#include <sys/platform.h>
+
+static ADI_SPORT_HANDLE handleSport4ATx = NULL;   /* SPORT4A, Tx transmit data to the dac*/
+static ADI_SPORT_HANDLE handleSport4BRx = NULL;   /* SPORT4B, Rx receive data from the adc */
+uint8_t memorySport4ATx[ADI_SPORT_MEMORY_SIZE];
+uint8_t memorySport4BRx[ADI_SPORT_MEMORY_SIZE];
+
+static ADI_SPDIF_RX_HANDLE handleSpdifRx = NULL;
+static ADI_SPDIF_TX_HANDLE handleSpdifTx = NULL;
+uint8_t memorySpdifRx[ADI_SPDIF_RX_MEMORY_SIZE];
+uint8_t memorySpdifTx[ADI_SPDIF_TX_MEMORY_SIZE];
+
+#define CHECK_RESULT(eResult) \
+        if(eResult != 0)\
+		{\
+			return (1);\
+        }
 
 static void printEvent(uint32_t event)
 {
-	printf("\n");
+	//printf("\n");
     if (event == ADI_SPORT_HW_ERR_NONE) {
         printf("[Callback event] No event\n");
         return;
@@ -68,53 +85,37 @@ static void printEvent(uint32_t event)
     }
 }
 
-static volatile uint8_t rxCallbackCount = 0;
-void SportCallback2(void *pAppHandle, uint32_t event, void *pArg)
-{
-	//printEvent(event);
-	switch (event)
-	{
-		/* CASE (buffer processed) */
-		case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
-			rxCallbackCount += 1;
-			if (rxCallbackCount == 1) {
-				mapANtoDAC((const int32_t*)bufferRxPing, (int32_t*)bufferTxPing);
-			}
-			if (rxCallbackCount == 2) {
-				mapANtoDAC((const int32_t*)bufferRxPong, (int32_t*)bufferTxPong);
-				rxCallbackCount = 0;
-			}
-			break;
-		default:
-			break;
-	}
-}
-
 void SportCallback(void *pAppHandle, uint32_t event, void *pArg)
 {
 	//printEvent(event);
-	switch (event)
-	{
-		/* CASE (buffer processed) */
-	case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
-	    rxCallbackCount += 1;
-	    if (rxCallbackCount == 1) {
-	        /* PING */
-	        fillInputBufferFromAN((const int32_t*)bufferRxPing);
-	        processBlock(inputBufferBlock, outputBufferBlock);
-	        fillDACFromOutputBuffer((int32_t*)bufferTxPong);
-	    } else if (rxCallbackCount == 2) {
-	        /* PONG */
-	        fillInputBufferFromAN((const int32_t*)bufferRxPong);
-	        processBlock(inputBufferBlock, outputBufferBlock);
-	        fillDACFromOutputBuffer((int32_t*)bufferTxPing);
-	        rxCallbackCount = 0;
-	    }
-	    break;
-		default:
-			break;
-	}
+    switch (event)
+    {
+    case ADI_SPORT_EVENT_RX_BUFFER_PROCESSED:
+    	//printf("ok");
+        // JACK RX completed: publish a fresh block for the CPU
+        if (pAppHandle == handleSport4BRx) {
+        	//printf("flipping jackStream.Rx and set True\n");
+            flipPingPong(&jackStream.Rx);          // wrote half becomes readPtr
+            jackStream.Rx.isFreshData = true;      // CPU can consume once
+            //printPingPongStates();
+        }
+        break;
+
+    case ADI_SPORT_EVENT_TX_BUFFER_PROCESSED:
+        // JACK TX completed: SPORT (the consumer) just finished reading
+        if (pAppHandle == handleSport4ATx) {
+        	//printf("flipping jackStream.Tx and set false\n");
+            flipPingPong(&jackStream.Tx);          // read half becomes writePtr
+            jackStream.Tx.isFreshData = false;     // no fresh data for SPORT now
+        }
+        break;
+
+    default:
+    	//printPingPongStates();//printEvent(event);//debug
+        break;
+    }
 }
+
 
 static inline int _chk(const char* what, ADI_SPORT_RESULT r)
 {
@@ -123,6 +124,27 @@ static inline int _chk(const char* what, ADI_SPORT_RESULT r)
         return APP_FAILED;
     }
     return APP_SUCCESS;
+}
+
+int spdif_init(void)
+{
+	ADI_SPDIF_RX_RESULT    rxResult;
+	ADI_SPDIF_TX_RESULT    txResult;
+
+	rxResult=adi_spdif_Rx_Open(SpdifDeviceNum,memorySpdifRx,ADI_SPDIF_RX_MEMORY_SIZE,&handleSpdifRx);
+	CHECK_RESULT(rxResult);
+	rxResult=adi_spdif_Rx_Enable(handleSpdifRx,true);
+	CHECK_RESULT(rxResult);
+
+	txResult=adi_spdif_Tx_Open(SpdifDeviceNum,memorySpdifTx,ADI_SPDIF_TX_MEMORY_SIZE,&handleSpdifTx);
+	CHECK_RESULT(txResult);
+	txResult = adi_spdif_Tx_SetSerialMode(handleSpdifTx, ADI_SPDIF_TX_INPUT_FMT_LEFT_JUSTIFIED);
+	CHECK_RESULT(txResult);
+	txResult = adi_spdif_Tx_SetFreqMultiplier(handleSpdifTx, ADI_SPDIF_TX_FREQ_MULT_256);
+	txResult=adi_spdif_Tx_Enable(handleSpdifTx,true);
+	CHECK_RESULT(txResult);
+	//txResult = adi_spdif_Tx_ConfigSport();
+	return 0;
 }
 
 int sport_init(void)
@@ -265,24 +287,15 @@ int sport_init(void)
     r = adi_sport_SelectChannel(handleSport4ATx, 0u, 11u);
     if (_chk("SelectCh 4A TX 0..11", r)) return APP_FAILED;
 
-    /* 6) Prime TX buffers with silence to avoid startup crackles. */
-    for (uint32_t k = 0; k < TX_WORDS; ++k) {
-        bufferTxPing[k] = 0;
-        bufferTxPong[k] = 0;
-    }
-
     /* 7) Register callbacks (recommend printing events inside the callback). */
 
     adi_sport_RegisterCallback(handleSport4BRx, SportCallback, handleSport4BRx);
     adi_sport_RegisterCallback(handleSport4ATx, SportCallback, handleSport4ATx);
 
-    /* 8) Prepare PDMA descriptor chains (Ping<->Pong circular). */
-    PrepareDescriptors();
-
     /* 9) Submit DMA transfers for RX and TX. */
     r = adi_sport_DMATransfer(
             handleSport4BRx,
-            &dmaDescriptorRxPing,
+            &jackStream.Rx.dmaDescriptorPing,
             2,                         /* Ping+Pong list */
             ADI_PDMA_DESCRIPTOR_LIST,
             ADI_SPORT_CHANNEL_PRIM);
@@ -290,7 +303,7 @@ int sport_init(void)
 
     r = adi_sport_DMATransfer(
             handleSport4ATx,
-            &dmaDescriptorTxPing,
+			&jackStream.Tx.dmaDescriptorPong,
             2,
             ADI_PDMA_DESCRIPTOR_LIST,
             ADI_SPORT_CHANNEL_PRIM);

@@ -1,5 +1,5 @@
 #include "ADAU1962Config.h"
-#include "templateTDM16_Core1.h"
+#include "TWI.h"
 #include <stdio.h>
 
 void writePLL_CLK_CTRL0(void) {
